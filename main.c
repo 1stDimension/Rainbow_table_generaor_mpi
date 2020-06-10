@@ -46,9 +46,27 @@ int main()
   int remainder = 0;
   int max_step = range - 1;
   int times = 9000;
+    for (int i = 0; i < length; i++)
+    {
+      int power = ipow(range, i + 1);
+      int tmp = step % power;
+      char this_step = tmp / ipow(range, i);
+      this_step += remainder;
+      remainder = 0;
+      // printf("DEBUG: begining =\"%s\"\n", begining);
+      // printf("DEBUG: next =\"%s\"\n", next);
+      char test = begining[length - i - 1] + this_step;
+      // potensiall overflow problem
+      //Max step is also the bigest possible value in one column
+      if (test > (max_step + min) || test < begining[length - i - 1])
+      {
+        remainder = 1;
+        test -= range;
+      }
+      // }
 
-  //let's assume
-  size_t password_length = 4;
+      next[length - i - 1] = test;
+    }
 
   uint8_t *new_reduce_value = NULL;
   new_reduce_value = malloc((password_length + 1) * sizeof(*new_reduce_value));
