@@ -46,6 +46,8 @@ int main()
   int remainder = 0;
   int max_step = range - 1;
   int times = 9000;
+  for (int j = 0; j < times; j++)
+  {
     for (int i = 0; i < length; i++)
     {
       int power = ipow(range, i + 1);
@@ -89,13 +91,33 @@ int main()
         printf("%c", (int)reduced[i]);
       printf("\"\n");
     }
-  printf("\n");
-  printf("reduced:\n");
-  for (i = 0; i < password_length; i++)
-  {
-    printf("%c", new_reduce_value[i]);
+    // printf("begining =\"%s\"\n", begining);
+    printf("next      =\"%s\"\n", next);
+    // printf("next(char)=");
+    // for (int i = 0; i < length; i++)
+    // {
+    // printf("%2c|", next[i]);
+    // }
+    // printf("\n");
+    // printf("next(int)= ");
+    // for (int i = 0; i < length + 1; i++)
+    // {
+    // printf("%2d|", next[i]);
+    // }
+    // printf("\n");
+    // printf("sizeof char* = %ld\nsizeof uint64_t %zu\n", sizeof(char *), sizeof(uint64_t));
+    SWAP(next, begining);
   }
-  printf("\n");
+  printf("start     =\"%s\"\n", start);
+  printf("last     =\"%s\"\n", next);
+  printf("hash = ");
+  // printf("next (int)=\"");
+  // for (int i = 0; i < length + 1; i++)
+  // {
+  // printf(" %d ", next[i]);
+  // }
+  // printf("\"\n");
+  // printf("next = %s\n", next);
 
   return 0;
 }
