@@ -2,10 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <mpi.h>
 #include "chains.h"
 
 #define CVECTOR_LOGARITHMIC_GROWTH
+#define HASH_LENGTH 20
 #include "c-vector/cvector.h"
+
+#define MASTER_ID 0
 
 #define SWAP(a, b) \
   {                \
@@ -37,29 +41,29 @@ int chain(int chain_length, char *input, int password_length, char *output, int 
 {
   uint8_t reduced[password_length];
 
-  printf("hash = ");
+  // printf("hash = ");
   hash(input, password_length, output);
-  for (int i = 0; i < 20; i++)
-    printf("%02x", (uint8_t)output[i]);
-  printf("\n");
+  // for (int i = 0; i < 20; i++)
+  // printf("%02x", (uint8_t)output[i]);
+  // printf("\n");
   chain_length--;
   for (int j = 0; j < chain_length; j++)
   {
-    printf("reduction %3d = \"", j);
+    // printf("reduction %3d = \"", j);
     reduction(output, 20, reduced, password_length);
-    for (int i = 0; i < password_length; i++)
-      printf("%c", (int)reduced[i]);
-    printf("\"\n");
-    printf("hash = %3d", j);
+    // for (int i = 0; i < password_length; i++)
+    // printf("%c", (int)reduced[i]);
+    // printf("\"\n");
+    // printf("hash = %3d", j);
     hash(reduced, password_length, output);
-    for (int i = 0; i < 20; i++)
-      printf("%02x", (uint8_t)output[i]);
-    printf("\n");
+    // for (int i = 0; i < 20; i++)
+    // printf("%02x", (uint8_t)output[i]);
+    // printf("\n");
   }
 }
 
 //if returns != there was overflow
-// beggining and next should be pre-allocated
+// begining and next should be pre-allocated
 int get_next(int step, int min, int max, int range, int length, int remainder, char *begining, char *next)
 {
   int max_step = range - 1;
@@ -104,67 +108,120 @@ int get_next(int step, int min, int max, int range, int length, int remainder, c
   // }
 }
 
-int main()
+int main(int argc, char **argv)
 {
   // (Always push back length of passwords times)
+  MPI_Init(&argc, &argv);
+  int world_size, rank;
+  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   cvector_vector_type(char) all_possibilities = NULL;
-  const char *start = "     ";
-  // 32 - 126 = 94; podzielić na 94ki
+  cvector_vector_type(char) my_input = NULL;
+  cvector_vector_type(char) my_ouput = NULL;
+  cvector_vector_type(char) all_outputs = NULL;
+  const char *start = "   ";
+  // 32 - 126 = 94;
   int length = strlen(start);
-  char *begining = malloc((length + 1) * sizeof(*begining));
-  memcpy(begining, start, length);
-  char *next = malloc((length + 1) * sizeof(*next));
-  next[length] = 0;
-  int step = 60000000;
+  int step = 6000000;
   int min = 32;
   int max = 126;
   int range = 95;
   int remainder = 0;
   int max_step = range - 1;
-  // +1 because adding null terminating string
-  for (int i = 0; i < length + 1; i++)
+  int num_passwords;
+  int link_length = 20;
+  if (rank == MASTER_ID)
   {
-    cvector_push_back(all_possibilities, start[i]);
-  }
-  // loop until overflow happens;
-  for (int j = 0;; j++)
-  {
-    int overflow = 0;
-    // allocate memory for next part
-    for (int k = 0; k < length + 1; k++)
+    // +1 because adding null terminating string
+    for (int i = 0; i < length + 1; i++)
     {
-      cvector_push_back(all_possibilities, 0);
+      cvector_push_back(all_possibilities, start[i]);
     }
-    char *this = all_possibilities + j * (length + 1);
-    char *n = this + length + 1;
-    overflow = get_next(step, min, max, range, length, remainder, this, n);
-    //adjust size because last element is not important if overflowhappened
-    if (overflow != 0)
+    // loop until overflow happens;
+    for (int j = 0;; j++)
     {
+      int overflow = 0;
+      // allocate memory for next part
       for (int k = 0; k < length + 1; k++)
       {
-        cvector_pop_back(all_possibilities);
+        cvector_push_back(all_possibilities, 0);
+        cvector_push_back(all_outputs, 0);
       }
-      break;
+      char *this = all_possibilities + j * (length + 1);
+      char *n = this + length + 1;
+      overflow = get_next(step, min, max, range, length, remainder, this, n);
+      //adjust size because last element is not important if overflowhappened
+      if (overflow != 0)
+      {
+        for (int k = 0; k < length + 1; k++)
+        {
+          cvector_pop_back(all_possibilities);
+        }
+        break;
+      }
     }
-  }
-  int passwords = cvector_size(all_possibilities) / (length + 1);
-  for (int i = 0; i < passwords; i++)
-  {
-    for (int j = 0; j < length; j++)
+    num_passwords = cvector_size(all_possibilities) / (length + 1);
+    // print all passwords
+    for (int i = 0; i < num_passwords; i++)
     {
-      printf("%c",
-             all_possibilities[i * (length + 1) + j]);
+      for (int j = 0; j < length; j++)
+      {
+        printf("%c",
+               all_possibilities[i * (length + 1) + j]);
+      }
+      printf("\n");
     }
-    printf("\n");
-    char l = 20;
-    char hashed[l];
-    chain(4, all_possibilities + i * (length + 1), length, hashed, l);
   }
 
-  cvector_free(all_possibilities);
-  free(begining);
-  free(next);
+  MPI_Bcast(&num_passwords, 1, MPI_INT, MASTER_ID, MPI_COMM_WORLD);
+  MPI_Bcast(&link_length, 1, MPI_INT, MASTER_ID, MPI_COMM_WORLD);
+  MPI_Bcast(&length, 1, MPI_INT, MASTER_ID, MPI_COMM_WORLD);
+  // Data type for passwords
+  printf("I'm %d passwords = %d\n", rank, num_passwords);
+  MPI_Datatype password_type;
+  MPI_Type_contiguous(length + 1, MPI_CHAR, &password_type);
+  MPI_Type_commit(&password_type);
 
+  const int my_share = num_passwords / world_size;
+  // Allocate vector to fit my share of passwords
+  for (int i = 0; i < my_share; i++)
+  {
+    for (int j = 0; j < length + 1; j++)
+    {
+      cvector_push_back(my_input, 0);
+      cvector_push_back(my_ouput, 0);
+    }
+  }
+  // send data to workers
+  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Scatter(all_possibilities, my_share, password_type, my_input, my_share, password_type, MASTER_ID, MPI_COMM_WORLD);
+
+  for (int i = 0; i < my_share; i++)
+  {
+    chain(link_length, my_input + i * (length + 1), length, my_ouput + i * 20, 20);
+  }
+
+  printf("po chain\n");
+  MPI_Barrier(MPI_COMM_WORLD);
+  // MPI_Scatter(sizes, 1, MPI_INT, &mySize, 1, MPI_INT, master, MPI_COMM_WORLD);
+  MPI_Gather(my_ouput, HASH_LENGTH * my_share, MPI_CHAR, all_outputs, HASH_LENGTH * my_share, MPI_CHAR, MASTER_ID, MPI_COMM_WORLD);
+
+  printf("I'm %d my share = %d\n", rank, my_share);
+  if (rank == MASTER_ID)
+  {
+    int imbalance = num_passwords % world_size;
+    int last = my_share * world_size;
+    printf("I'm master and imbalance is %d Last is %d\n", imbalance, last);
+  }
+  // MPI_Scatter(sizes, 1, password_type, &mySize, 1, MPI_INT, master, MPI_COMM_WORLD);
+
+  if (rank == MASTER_ID)
+  {
+    cvector_free(all_possibilities);
+    cvector_free(all_possibilities);
+  }
+  cvector_free(my_ouput);
+  cvector_free(my_input);
+  MPI_Finalize();
   return 0;
 }
