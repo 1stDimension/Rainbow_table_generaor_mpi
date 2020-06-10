@@ -85,27 +85,6 @@ int get_next(int step, int min, int max, int range, int length, int remainder, c
     next[length - i - 1] = test;
   }
   return remainder;
-  // if (remainder != 0)
-  // {
-  // break;
-  // }
-  // else
-  // {
-  // uint8_t computed_hash[20];
-  // uint8_t reduced[length];
-  //
-  // printf("hash = ");
-  // hash(next, length, computed_hash);
-  // for (int i = 0; i < 20; i++)
-  // printf("%02x", computed_hash[i]);
-  // printf("\n");
-  //
-  // printf("reduction = \"");
-  // reduction(computed_hash, 20, reduced, length);
-  // for (int i = 0; i < length; i++)
-  // printf("%c", (int)reduced[i]);
-  // printf("\"\n");
-  // }
 }
 
 int main(int argc, char **argv)
@@ -117,12 +96,12 @@ int main(int argc, char **argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   cvector_vector_type(char) all_possibilities = NULL;
   cvector_vector_type(char) my_input = NULL;
-  cvector_vector_type(char) my_ouput = NULL;
+  cvector_vector_type(char) my_output = NULL;
   cvector_vector_type(char) all_outputs = NULL;
   const char *start = "   ";
   // 32 - 126 = 94;
   int length = strlen(start);
-  int step = 6000000;
+  int step = 6000;
   int min = 32;
   int max = 126;
   int range = 95;
@@ -145,6 +124,9 @@ int main(int argc, char **argv)
       for (int k = 0; k < length + 1; k++)
       {
         cvector_push_back(all_possibilities, 0);
+      }
+      for (int k = 0; k < HASH_LENGTH; k++)
+      {
         cvector_push_back(all_outputs, 0);
       }
       char *this = all_possibilities + j * (length + 1);
@@ -157,27 +139,30 @@ int main(int argc, char **argv)
         {
           cvector_pop_back(all_possibilities);
         }
+        for (int k = 0; k < HASH_LENGTH; k++)
+        {
+          cvector_pop_back(all_outputs);
+        }
         break;
       }
     }
     num_passwords = cvector_size(all_possibilities) / (length + 1);
     // print all passwords
-    for (int i = 0; i < num_passwords; i++)
-    {
-      for (int j = 0; j < length; j++)
-      {
-        printf("%c",
-               all_possibilities[i * (length + 1) + j]);
-      }
-      printf("\n");
-    }
+    // for (int i = 0; i < num_passwords; i++)
+    // {
+    // for (int j = 0; j < length; j++)
+    // {
+    // printf("%c",
+    //  all_possibilities[i * (length + 1) + j]);
+    // }
+    // printf("\n");
+    // }
   }
 
   MPI_Bcast(&num_passwords, 1, MPI_INT, MASTER_ID, MPI_COMM_WORLD);
   MPI_Bcast(&link_length, 1, MPI_INT, MASTER_ID, MPI_COMM_WORLD);
   MPI_Bcast(&length, 1, MPI_INT, MASTER_ID, MPI_COMM_WORLD);
   // Data type for passwords
-  printf("I'm %d passwords = %d\n", rank, num_passwords);
   MPI_Datatype password_type;
   MPI_Type_contiguous(length + 1, MPI_CHAR, &password_type);
   MPI_Type_commit(&password_type);
@@ -189,38 +174,58 @@ int main(int argc, char **argv)
     for (int j = 0; j < length + 1; j++)
     {
       cvector_push_back(my_input, 0);
-      cvector_push_back(my_ouput, 0);
+    }
+    for (int j = 0; j < HASH_LENGTH; j++)
+    {
+      cvector_push_back(my_output, 0);
     }
   }
   // send data to workers
-  MPI_Barrier(MPI_COMM_WORLD);
   MPI_Scatter(all_possibilities, my_share, password_type, my_input, my_share, password_type, MASTER_ID, MPI_COMM_WORLD);
 
   for (int i = 0; i < my_share; i++)
   {
-    chain(link_length, my_input + i * (length + 1), length, my_ouput + i * 20, 20);
+    chain(link_length, my_input + i * (length + 1), length, my_output + i * 20, 20);
   }
 
-  printf("po chain\n");
-  MPI_Barrier(MPI_COMM_WORLD);
-  // MPI_Scatter(sizes, 1, MPI_INT, &mySize, 1, MPI_INT, master, MPI_COMM_WORLD);
-  MPI_Gather(my_ouput, HASH_LENGTH * my_share, MPI_CHAR, all_outputs, HASH_LENGTH * my_share, MPI_CHAR, MASTER_ID, MPI_COMM_WORLD);
+  // for (int i = 0; i < my_share; i++)
+  // {
+  // for (int j = 0; j < HASH_LENGTH; j++)
+  // {
+  // printf("%d|", (int)
+  // my_output[i * HASH_LENGTH + j]);
+  // }
+  // printf("\n");
+  // }
 
-  printf("I'm %d my share = %d\n", rank, my_share);
+  // MPI_Scatter(sizes, 1, MPI_INT, &mySize, 1, MPI_INT, master, MPI_COMM_WORLD);
+  MPI_Gather(my_output, HASH_LENGTH * my_share, MPI_CHAR, all_outputs, HASH_LENGTH * my_share, MPI_CHAR, MASTER_ID, MPI_COMM_WORLD);
+
   if (rank == MASTER_ID)
   {
     int imbalance = num_passwords % world_size;
     int last = my_share * world_size;
     printf("I'm master and imbalance is %d Last is %d\n", imbalance, last);
+    char *file = "output.txt";
+    FILE *w = fopen(file, "w");
+    for (int i = 0; i < num_passwords; i++)
+    {
+      fprintf(w, "%s;", all_possibilities + i * (length + 1));
+      for (int j = 0; j < HASH_LENGTH; j++)
+      {
+        fprintf(w, "%02x", (uint8_t)all_outputs[i * (HASH_LENGTH) + j]);
+      }
+      fprintf(w, "\n");
+    }
+    fclose(w);
   }
-  // MPI_Scatter(sizes, 1, password_type, &mySize, 1, MPI_INT, master, MPI_COMM_WORLD);
 
   if (rank == MASTER_ID)
   {
     cvector_free(all_possibilities);
-    cvector_free(all_possibilities);
+    cvector_free(all_outputs);
   }
-  cvector_free(my_ouput);
+  cvector_free(my_output);
   cvector_free(my_input);
   MPI_Finalize();
   return 0;
