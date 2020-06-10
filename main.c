@@ -32,8 +32,20 @@ int ipow(int base, int exp)
 
 int main()
 {
-  unsigned char ibuf[] = "compute sha1";
-  uint8_t obuf[20];
+  const char *start = "     ";
+  int step = 20000000;
+  // 32 - 126 = 94; podzielić na 94ki
+  int length = strlen(start);
+  char *begining = malloc((length + 1) * sizeof(*begining));
+  memcpy(begining, start, length);
+  char *next = malloc((length + 1) * sizeof(*next));
+  next[length] = 0;
+  int min = 32;
+  int max = 126;
+  int range = 95;
+  int remainder = 0;
+  int max_step = range - 1;
+  int times = 9000;
 
   //let's assume
   size_t password_length = 4;
