@@ -33,8 +33,29 @@ int ipow(int base, int exp)
   return result;
 }
 
-int chain(int length)
+int chain(int chain_length, char *input, int password_length, char *output, int outputlength)
 {
+  uint8_t reduced[password_length];
+
+  printf("hash = ");
+  hash(input, password_length, output);
+  for (int i = 0; i < 20; i++)
+    printf("%02x", (uint8_t)output[i]);
+  printf("\n");
+  chain_length--;
+  for (int j = 0; j < chain_length; j++)
+  {
+    printf("reduction %3d = \"", j);
+    reduction(output, 20, reduced, password_length);
+    for (int i = 0; i < password_length; i++)
+      printf("%c", (int)reduced[i]);
+    printf("\"\n");
+    printf("hash = %3d", j);
+    hash(reduced, password_length, output);
+    for (int i = 0; i < 20; i++)
+      printf("%02x", (uint8_t)output[i]);
+    printf("\n");
+  }
 }
 
 //if returns != there was overflow
@@ -94,22 +115,21 @@ int main()
   memcpy(begining, start, length);
   char *next = malloc((length + 1) * sizeof(*next));
   next[length] = 0;
-  int step = 20000000;
+  int step = 60000000;
   int min = 32;
   int max = 126;
   int range = 95;
   int remainder = 0;
   int max_step = range - 1;
-  int times = 9000;
   // +1 because adding null terminating string
   for (int i = 0; i < length + 1; i++)
   {
     cvector_push_back(all_possibilities, start[i]);
   }
-
-  for (int j = 0; j < times; j++)
+  // loop until overflow happens;
+  for (int j = 0;; j++)
   {
-    int if_overflow = 0;
+    int overflow = 0;
     // allocate memory for next part
     for (int k = 0; k < length + 1; k++)
     {
@@ -117,10 +137,19 @@ int main()
     }
     char *this = all_possibilities + j * (length + 1);
     char *n = this + length + 1;
-    if_overflow = get_next(step, min, max, range, length, remainder, this, n);
-    // SWAP(next, begining);
+    overflow = get_next(step, min, max, range, length, remainder, this, n);
+    //adjust size because last element is not important if overflowhappened
+    if (overflow != 0)
+    {
+      for (int k = 0; k < length + 1; k++)
+      {
+        cvector_pop_back(all_possibilities);
+      }
+      break;
+    }
   }
-  for (int i = 0; i < times; i++)
+  int passwords = cvector_size(all_possibilities) / (length + 1);
+  for (int i = 0; i < passwords; i++)
   {
     for (int j = 0; j < length; j++)
     {
@@ -128,17 +157,12 @@ int main()
              all_possibilities[i * (length + 1) + j]);
     }
     printf("\n");
+    char l = 20;
+    char hashed[l];
+    chain(4, all_possibilities + i * (length + 1), length, hashed, l);
   }
-  // printf("start     =\"%s\"\n", start);
-  // printf("last      =\"%s\"\n", next);
-  // printf("hash = ");
-  // printf("next (int)=\"");
-  // for (int i = 0; i < length + 1; i++)
-  // {
-  // printf(" %d ", next[i]);
-  // }
-  // printf("\"\n");
-  // printf("next = %s\n", next);
+
+  cvector_free(all_possibilities);
   free(begining);
   free(next);
 
