@@ -72,18 +72,23 @@ int main()
       printf("after loop non zero remainder\n");
       break;
     }
+    else
+    {
+      uint8_t computed_hash[20];
+      uint8_t reduced[length];
 
-  uint8_t *new_reduce_value = NULL;
-  new_reduce_value = malloc((password_length + 1) * sizeof(*new_reduce_value));
+      printf("hash = ");
+      hash(next, length, computed_hash);
+      for (int i = 0; i < 20; i++)
+        printf("%02x", computed_hash[i]);
+      printf("\n");
 
-  hash(ibuf, strlen(ibuf), obuf);
-  reduction(obuf, 20, new_reduce_value, password_length);
-
-  int i;
-  for (i = 0; i < 20; i++)
-  {
-    printf("%x", obuf[i]);
-  }
+      printf("reduction = \"");
+      reduction(computed_hash, 20, reduced, length);
+      for (int i = 0; i < length; i++)
+        printf("%c", (int)reduced[i]);
+      printf("\"\n");
+    }
   printf("\n");
   printf("reduced:\n");
   for (i = 0; i < password_length; i++)
