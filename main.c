@@ -4,6 +4,13 @@
 #include <stdint.h>
 #include "chains.h"
 
+#define SWAP(a, b) \
+  {                \
+    typeof(a) t;   \
+    t = a;         \
+    a = b;         \
+    b = t;         \
+  }
 // hash_value
 // new_hash_value
 // reduce_value
