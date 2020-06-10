@@ -67,6 +67,11 @@ int main()
 
       next[length - i - 1] = test;
     }
+    if (remainder != 0)
+    {
+      printf("after loop non zero remainder\n");
+      break;
+    }
 
   uint8_t *new_reduce_value = NULL;
   new_reduce_value = malloc((password_length + 1) * sizeof(*new_reduce_value));
