@@ -50,7 +50,7 @@ int chain(int chain_length, char *input, int password_length, char *output, int 
   for (int j = 0; j < chain_length; j++)
   {
     // printf("reduction %3d = \"", j);
-    reduction(output, 20, reduced, password_length);
+    reduction(output, HASH_LENGTH, reduced, password_length);
     // for (int i = 0; i < password_length; i++)
     // printf("%c", (int)reduced[i]);
     // printf("\"\n");
@@ -98,10 +98,10 @@ int main(int argc, char **argv)
   cvector_vector_type(char) my_input = NULL;
   cvector_vector_type(char) my_output = NULL;
   cvector_vector_type(char) all_outputs = NULL;
-  const char *start = "   ";
+  const char *start = "     ";
   // 32 - 126 = 94;
   int length = strlen(start);
-  int step = 6000;
+  int step = 6000000;
   int min = 32;
   int max = 126;
   int range = 95;
@@ -185,7 +185,7 @@ int main(int argc, char **argv)
 
   for (int i = 0; i < my_share; i++)
   {
-    chain(link_length, my_input + i * (length + 1), length, my_output + i * 20, 20);
+    chain(link_length, my_input + i * (length + 1), length, my_output + i * HASH_LENGTH, HASH_LENGTH);
   }
 
   // for (int i = 0; i < my_share; i++)
@@ -200,12 +200,17 @@ int main(int argc, char **argv)
 
   // MPI_Scatter(sizes, 1, MPI_INT, &mySize, 1, MPI_INT, master, MPI_COMM_WORLD);
   MPI_Gather(my_output, HASH_LENGTH * my_share, MPI_CHAR, all_outputs, HASH_LENGTH * my_share, MPI_CHAR, MASTER_ID, MPI_COMM_WORLD);
-
+  cvector_free(my_output);
+  cvector_free(my_input);
   if (rank == MASTER_ID)
   {
-    int imbalance = num_passwords % world_size;
     int last = my_share * world_size;
-    printf("I'm master and imbalance is %d Last is %d\n", imbalance, last);
+
+    for (int i = last; i < num_passwords; i++)
+    {
+      chain(link_length, all_possibilities + i * (length + 1), length, all_outputs + i * HASH_LENGTH, HASH_LENGTH);
+    }
+
     char *file = "output.txt";
     FILE *w = fopen(file, "w");
     for (int i = 0; i < num_passwords; i++)
@@ -225,8 +230,6 @@ int main(int argc, char **argv)
     cvector_free(all_possibilities);
     cvector_free(all_outputs);
   }
-  cvector_free(my_output);
-  cvector_free(my_input);
   MPI_Finalize();
   return 0;
 }
