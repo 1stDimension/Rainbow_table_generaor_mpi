@@ -1,0 +1,35 @@
+stat = "   "
+step = 6000;
+min = 32;
+max = 126;
+range = 95;
+remainder = 0;
+max_step = range - 1;
+num_passwords;
+link_length = 20;
+==
+1
+================
+CPU     42%
+user    0.094
+system  0.344
+================
+2
+================
+CPU     68%
+user    0.125
+system  0.312
+total   0.641
+================
+3
+================
+CPU     102%
+user    0.281
+system  0.797
+total   1.055
+4
+================
+CPU     116%
+user    0.391
+system  1.062
+total   1.245
