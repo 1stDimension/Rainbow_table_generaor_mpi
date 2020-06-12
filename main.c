@@ -90,7 +90,6 @@ int handle_input(int argc, char **argv, int *length_ptr, int *link_length_ptr, i
   }
   if (argc > 2)
   {
-    printf("2\n");
     *link_length_ptr = atoi(argv[2]);
     if (*link_length_ptr == 0)
     {
@@ -100,7 +99,6 @@ int handle_input(int argc, char **argv, int *length_ptr, int *link_length_ptr, i
   }
   if (argc > 3)
   {
-    printf("3\n");
     *step_ptr = atoi(argv[3]);
     if (*step_ptr == 0)
     {
