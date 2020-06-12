@@ -87,6 +87,19 @@ int get_next(int step, int min, int max, int range, int length, int remainder, c
   return remainder;
 }
 
+int handle_input()
+{
+
+  int length = 5;
+  int step = 6000;
+  int min = 32;
+  int max = 126;
+  int range = 95;
+  int remainder = 0;
+  int max_step = range - 1;
+  int num_passwords;
+}
+
 int main(int argc, char **argv)
 {
   // (Always push back length of passwords times)
@@ -101,7 +114,7 @@ int main(int argc, char **argv)
   const char *start = "     ";
   // 32 - 126 = 94;
   int length = strlen(start);
-  int step = 6000000;
+  int step = 6000;
   int min = 32;
   int max = 126;
   int range = 95;
@@ -213,6 +226,7 @@ int main(int argc, char **argv)
 
     char *file = "output.txt";
     FILE *w = fopen(file, "w");
+    printf("Saving to file\n");
     for (int i = 0; i < num_passwords; i++)
     {
       fprintf(w, "%s;", all_possibilities + i * (length + 1));
