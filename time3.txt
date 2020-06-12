@@ -1,0 +1,89 @@
+ $ time mpiexec -n 1 -q --oversubscribe bin/rb.out
+Saving to file
+
+================
+CPU     89%
+user    10.203
+system  0.750
+total   12.303
+---
+ $ time mpiexec -n 1 -q --oversubscribe bin/rb.out
+Saving to file
+
+================
+CPU     86%
+user    9.875
+system  0.703
+total   12.197
+---
+ $ time mpiexec -n 2 -q --oversubscribe bin/rb.out
+Saving to file
+
+================
+CPU     132%
+user    11.094
+system  1.172
+total   9.260
+---
+ $ time mpiexec -n 2 -q --oversubscribe bin/rb.out
+Saving to file
+
+================
+CPU     138%
+user    11.297
+system  1.172
+total   9.031
+---
+ $ time mpiexec -n 3 -q --oversubscribe bin/rb.out
+Saving to file
+
+================
+CPU     164%
+user    13.438
+system  2.547
+total   9.693
+---
+ $ time mpiexec -n 3 -q --oversubscribe bin/rb.out
+Saving to file
+
+================
+CPU     176%
+user    13.594
+system  2.812
+total   9.287
+---
+ $ time mpiexec -n 4 -q --oversubscribe bin/rb.out
+Saving to file
+
+================
+CPU     209%
+user    16.406
+system  3.375
+total   9.458
+---
+ $ time mpiexec -n 4 -q --oversubscribe bin/rb.out
+Saving to file
+
+================
+CPU     209%
+user    16.484
+system  3.234
+total   9.434
+================
+ $ time mpiexec -n 5 -q --oversubscribe bin/rb.out
+Saving to file
+
+================
+CPU     205%
+user    15.969
+system  3.578
+total   9.519
+================
+ $ time mpiexec -n 5 -q --oversubscribe bin/rb.out
+Saving to file
+
+================
+CPU     206%
+user    16.141
+system  3.797
+total   9.675

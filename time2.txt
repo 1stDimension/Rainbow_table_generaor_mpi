@@ -1,0 +1,27 @@
+ $ time mpiexec -n 1 --oversubscribe bin/rb.out
+===============================================
+CPU     93%
+user    9.438
+system  0.797
+total   10.934
+===============================================
+ $ time mpiexec -n 2 --oversubscribe bin/rb.out
+================
+CPU     140%
+user    12.859
+system  1.109
+total   9.970
+===============================================
+ $ time mpiexec -n 3 --oversubscribe bin/rb.out
+================
+CPU     176%
+user    13.500
+system  2.891
+total   9.298
+===============================================
+ $ time mpiexec -n 4 --oversubscribe bin/rb.out
+================
+CPU     211%
+user    16.625
+system  3.609
+total   9.567
